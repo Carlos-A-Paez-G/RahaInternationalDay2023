@@ -1,13 +1,30 @@
 ////////// TO-DO
 /*
-Make assets
-Make text image button
+1.- Build the logic
+Booklet
+Needs to keep track of how many countries have been added from all the pages
+Contains all the pages
 
-"Achievements"
+Keycodes
+Insert code to get country
+number display
+numpad itself
+success message
+failure message
 
-Instructions Page
-Credits page
+Pages
+Contain stickers/stamps/whatever
+At least 3 color scheemes
+Drawing..?
 
+Stamps
+One for each country
+put in keycode -> select where to put it (confirm message) -> flashy stuff?
+
+OPTIONAL
+Pen
+Loading screen
+Rearranging stickers
 
 */
 
