@@ -1,30 +1,13 @@
 ////////// TO-DO
 /*
-1.- Build the logic
-Booklet
-Needs to keep track of how many countries have been added from all the pages
-Contains all the pages
+Make assets
+Make text image button
 
-Keycodes
-Insert code to get country
-number display
-numpad itself
-success message
-failure message
+"Achievements"
 
-Pages
-Contain stickers/stamps/whatever
-At least 3 color scheemes
-Drawing..?
+Instructions Page
+Credits page
 
-Stamps
-One for each country
-put in keycode -> select where to put it (confirm message) -> flashy stuff?
-
-OPTIONAL
-Pen
-Loading screen
-Rearranging stickers
 
 */
 
@@ -102,15 +85,15 @@ function addNum(n) {
   }
 }
 
-function deleteNum() {
-  if (currentGuess != null && currentGuess.length() > 0) {
-    currentGuess = currentGuess.substring(0, str.length() - 1);
- }
-}
+// function deleteNum() {
+//   if (currentGuess != null && currentGuess.length() > 0) {
+//     currentGuess = currentGuess.substring(0, str.length() - 1);
+//  }
+// }
 
-function removeNum() {
-  currentGuess = currentGuess.slice(0,-1);
-}
+// function removeNum() {
+//   currentGuess = currentGuess.slice(0,-1);
+// }
 
 ////////// CLASSES
 
@@ -206,9 +189,10 @@ class Stamp extends Button {
   displayText() {
     push();
     textSize(this.s_c);
+    textWrap(WORD);
     fill(0);
     rectMode(CENTER);
-    text(this.country, this.x_c, this.y_c);
+    text(this.country, this.x_c, this.y_c, this.w);
     pop();
   }
 
@@ -312,7 +296,7 @@ class Keypad {
       }
       //save find to cache
       localStorage.setItem(find, true);
-      
+
       //need another state for showing success/error message...
     } else {
       console.log("no...");
@@ -603,13 +587,6 @@ function draw() {
 
 ////////// CORE FUNCTIONS
 
-// function mousePressed() {
-// }
-
-// function mouseDragged() {
-
-// }
-
 function deleteCountriesCache() {
   var names = countries.getColumn("COUNTRY");
   for(var c in names) {
@@ -662,32 +639,9 @@ function initStamps(x, y, w, h) {
       y_offset = 1;
     }
     var temp_x = x + w*1/2 + 3/2*w*(i%2);
-    var temp_y = y + h*5/4 + 6/2*h*y_offset;
+    var temp_y = y + h*5/4 + 5/2*h*y_offset;
 
-    stamps[i] = new Stamp(stampImages[i], temp_x, temp_y, w, h, countries.get(i, 'COUNTRY'), temp_x, temp_y + 15/10*h, abs(y-h)*3/5);
+    stamps[i] = new Stamp(stampImages[i], temp_x, temp_y, w, h, countries.get(i, 'COUNTRY'), temp_x + w/2, temp_y + 12/10*h, abs(y-h)*3/5);
   }
 }
-
-
-
-
-//LocalStorage test stuff
- // // Testing cache storage
-  // if(!localStorage.getItem('X')){
-  //   b1 = new Button(DW/5,DH/5,DW/3,DH/5,200);
-  // } else {
-  //   x1 = Number(localStorage.getItem('X'));
-  //   y1 = Number(localStorage.getItem('Y'));
-  //   //console.log("loaded " + x1 + ", " + y1);
-  //   b1 = new Button(x1, y1, DW/3,DH/5,200);
-  // }
-
-
-    // if(b1.selected()) {
-  //   b1.x = mouseX-b1.w/2;
-  //   b1.y = mouseY-b1.h/2;
-  //   console.log("x = " + b1.x);
-  //   localStorage.setItem('X',b1.x);
-  //   localStorage.setItem('Y',b1.y);
-  //   console.log("Set: " + localStorage.getItem('X') + " , " + localStorage.getItem('Y'));
-  // }  
+  
