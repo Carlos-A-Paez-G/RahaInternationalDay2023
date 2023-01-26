@@ -179,11 +179,29 @@ class TextButton extends Button {
   }
 }
 
+class ImageButton extends Button {
+  constructor(x,y,w,h,c,MODE,img) {
+    super(x,y,w,h,c,MODE);
+    this.img = img;
+  }
+
+  display() {
+    push();
+    rectMode(this.mode);
+    if(this.pressed()){
+      tint(255, 120);
+    }
+    image(this.img, this.x, this.y, this.w, this.h);
+    pop();
+  }
+}
+
 class Stamp extends Button {
   constructor(img, x, y, w, h, country, x_c, y_c, s_c) {
     super(x,y,w,h);
     this.mode = CORNER;
     this.img = img;
+    // this.img.resize(this.w);
     this.country = country;
     this.x_c = x_c;
     this.y_c = y_c;
@@ -226,7 +244,7 @@ class Stamp extends Button {
 
   exist() {
     if(!this.obtained) {
-      this.displayEmpty();
+      //this.displayEmpty();
     } else {
       this.displayStamp();
     }
@@ -444,7 +462,7 @@ class Passport {
     this.pages[1] = new TextPage(this.x, this.y, this.w, this.h);
     this.pages[2] = new MapPage(this.x, this.y, this.w, this.h);
 
-    initStamps(this.x, this.y, abs((this.x-this.w)/3), abs((this.y-this.h)/6));
+    initStamps(this.x, this.y, abs((this.x-this.w)*2/5), abs((this.y-this.h)/6));
 
     var pagesEnd = int(countries.getRowCount()/4)+stampPagesStart+1;
     // console.log(stampPagesStart);
@@ -456,16 +474,24 @@ class Passport {
   }
 
   UI() {
-    this.nextPageButton.display();
-    if(this.nextPageButton.pressed() && this.pages[this.currentPage+1]) {
-      this.currentPage++;
+    //display next page button
+    if(this.currentPage < this.pages.length-1) {
+      console.log(this.pages.length);
+      this.nextPageButton.display();
+      if(this.nextPageButton.pressed() && this.pages[this.currentPage+1]) {
+        this.currentPage++;
+      }
     }
 
-    this.prevPageButton.display();
-    if(this.prevPageButton.pressed() && this.pages[this.currentPage-1]) {
-      this.currentPage--;
+    //display previous page button
+    if(this.currentPage > 0) {
+      this.prevPageButton.display();
+      if(this.prevPageButton.pressed() && this.pages[this.currentPage-1]) {
+        this.currentPage--;
+      }
     }
 
+    //display back to cover button
     if(this.currentPage != 0) {
       this.backToCoverButton.display();
       if(this.backToCoverButton.pressed()) {
@@ -559,14 +585,12 @@ function setup() {
   thePassport.initPages();
   
   startButton = new TextButton(DW/2, (DH*4)/10, 250, "Start", 0, DH/13);
-  creditsButton = new TextButton(DW/2, (DH*6)/10, 250, "Credits", 0, DH/15);
-  instructionsButton = new TextButton(DW/2, (DH*8)/10, 250, "Instructions", 0, DH/15);
-
-  
+  instructionsButton = new TextButton(DW/2, (DH*6)/10, 250, "Instructions", 0, DH/15);
+  creditsButton = new TextButton(DW/2, (DH*8)/10, 250, "More", 0, DH/15);
 }
 
 function draw() {
-  background(255,10,255);
+  background(150);
 
   //// Tests
   // b1.display();
@@ -655,10 +679,13 @@ function initStamps(x, y, w, h) {
     if((i%4 == 2 || i%4 == 3)) {
       y_offset = 1;
     }
-    var temp_x = x + w*1/2 + 3/2*w*(i%2);
-    var temp_y = y + h*5/4 + 5/2*h*y_offset;
 
-    stamps[i] = new Stamp(stampImages[i], temp_x, temp_y, w, h, countries.get(i, 'COUNTRY'), temp_x + w/2, temp_y + 12/10*h, abs(y-h)*3/5);
+    //passport coordinate + margin + position offset
+    var temp_x = x + w*1/6 + 3/2*w*(i%2);
+    var temp_y = y + h*5/4 + 5/2*h*y_offset;
+    var scaleFactor = w / stampImages[i].width;
+
+    stamps[i] = new Stamp(stampImages[i], temp_x, temp_y, w, stampImages[i].height * scaleFactor, countries.get(i, 'COUNTRY'), temp_x + w/2, temp_y + 12/10*h, abs(y-h)*3/5);
   }
 }
   
