@@ -629,7 +629,7 @@ function setup() {
   
   startButton = new TextButton(DW/2, (DH*4)/10, 250, "Start", 0, DH/13);
   instructionsButton = new TextButton(DW/2, (DH*6)/10, 250, "Instructions", 0, DH/15);
-  creditsButton = new TextButton(DW/2, (DH*8)/10, 250, "More", 0, DH/15);
+  creditsButton = new TextButton(DW/2, (DH*8)/10, 250, "Get Involved", 0, DH/15);
 }
 
 function draw() {
@@ -708,18 +708,28 @@ function touchMoved() {
 }
 
 function titleScreen() {
+  push();
+  textSize(displayHeight/16);
+  fill(255);
+  textAlign(CENTER);
+  textWrap(WORD);
+  text("International Day Passport 2023", 0, displayHeight*1/30, displayWidth, displayHeight/3);
+  pop();
+  
   if (startButton.pressed()) {
     gameState = 3;
   }
   startButton.displayTextButton();
 
   if (creditsButton.pressed()) {
-    gameState = 2;
+    // gameState = 2;
+    window.open('https://forms.gle/u9CNjaKmug2wZfCg9');
   }
   creditsButton.displayTextButton();
   
   if (instructionsButton.pressed()) {
-    gameState = 1;
+    // gameState = 1;
+    window.open('https://docs.google.com/document/d/1kiV6nBabeheyItm6fD-hESytkpmDcJ26sMypCczG8oM/edit?usp=sharing');
   }
   instructionsButton.displayTextButton();
 }
