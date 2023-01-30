@@ -393,6 +393,7 @@ class Cover {
     image(this.bg,this.x,this.y,this.w,this.h);
     pop();
 
+   /*
     if(this.typing){
       this.pad.exist();
       this.returnButton.displayTextButton();
@@ -414,7 +415,7 @@ class Cover {
     } else if (this.pressed == 'back') {
       this.typing = false;
     }
- 
+ */
   }
 }
 
