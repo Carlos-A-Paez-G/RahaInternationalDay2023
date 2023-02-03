@@ -21,7 +21,6 @@ COUNTRY,NUMBER
 "Italy",826093
 "Japan",260316
 "Jordan",828361
-"Palestine",211645
 "Korea",787019
 "Lebanon",580882
 "Malaysia",479430
@@ -30,11 +29,11 @@ COUNTRY,NUMBER
 "Netherlands",704203
 "New Zealand",795703
 "Pakistan",088044
+"Palestine",211645
 "Panama",488421
 "Philippines",537815
 "Poland",488434
 "Portugal",133749
-"Saudi Arabia",603411
 "Serbia",387266
 "Singapore",424679
 "Slovak Republic",208199
@@ -43,10 +42,10 @@ COUNTRY,NUMBER
 "Sweden",196251
 "Thailand",837015
 "Trinidad and Tobago",599669
-"Turkiye",232854
-"Ukraine",642340
+"Türkiye",232854
 "UAE",284764
 "UK",385944
+"Ukraine",642340
 "USA",422295
 "Venezuela",020999
 "Yemen",724883

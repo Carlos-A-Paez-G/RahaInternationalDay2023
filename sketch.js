@@ -49,7 +49,14 @@ var mouseIsClicked = false;
 var mouseIsReleased = true;
  
 var thePassport;
-var stampPagesStart = 1; //start counting from 0
+var stampPagesStart = 2; //first page with stamps on it, start counting from 0
+var completionRate = 0;
+
+var messageTimer = 0;
+var messageText;
+
+var confettiParticles = [];
+var confettiAmount = 0;
 
 //background animation
 var bgCircles = [];
@@ -63,6 +70,10 @@ var stampImages = []; //images for the stamps
 var stamps = []; //array of the actual stamp objects
 var cover_img;
 var page_img;
+var page50_img;
+var page100_img;
+var currentPageSkin;
+var lock_img;
 
 //tentative/to-do
 var button_img;
@@ -75,13 +86,14 @@ var map_img;
 function collision(x,y,width,height, MODE) {
   var w = width/2;
   var h = height/2;
+  var m = w/20; //margin
 
   if(MODE == CENTER) {
-    w = width/2;
-    h = height/2;
+    w = width/2 + m;
+    h = height/2 + m;
   } else if (MODE == CORNER) {
-    w = width;
-    h = height;
+    w = width + m;
+    h = height + m;
   }
 
   if (mouseX < x+w && mouseX > x-w && mouseY < y+h && mouseY > y-h) {
@@ -90,11 +102,33 @@ function collision(x,y,width,height, MODE) {
   return false;
 }
 
+function resultMessage(txt) {
+  push();
+  textSize(displayHeight/15);
+  fill(255,0,0);
+  textWrap(WORD);
+  textAlign(CENTER);
+  rectMode(CENTER);
+  text(txt,displayWidth/2,displayHeight/2, displayWidth*3/4);
+  pop();
+}
+
+function messagePopUp(txt) { 
+  messageTimer = 100;
+  messageText = txt;
+  //the message gets displayed by the text manager function at the end of draw().
+}
+
 function matchCountry(n) {
   var found = countries.findRow(n, 'NUMBER');
+  
   if (found) {
+    messageText = 'Success! ' + found.get('COUNTRY');
+    messagePopUp(messageText);
     return found.get('COUNTRY');
   } 
+  messageText = 'Wrong';
+  messagePopUp(messageText);
   return false;
 }
 
@@ -161,7 +195,7 @@ class Button {
 }
 
 class TextButton extends Button {
-  constructor (x, y, c, txt, txt_c, txt_s) {
+  constructor (x, y, c, txt, txt_c, txt_s, wrapping) {
     super(x,y);
     this.c = c;
     this.mode = CENTER;
@@ -175,9 +209,13 @@ class TextButton extends Button {
     textSize(txt_s);
     this.x_margin = textWidth(txt) / 20;
     this.w = textWidth(txt) + this.x_margin*4;
+    if(wrapping) {
+      this.w = this.w/2;
+    }
     pop();
     this.y_margin = txt_s / 20;
     this.h = txt_s + this.y_margin;
+    this.wrap = wrapping;
   }
 
   displayTextButton() {
@@ -189,8 +227,39 @@ class TextButton extends Button {
     rectMode(this.mode);
     textFont(this.font);
     fill(this.txt_c);
+    if(this.wrap) {
+      textWrap(WORD);
+    }
     text(this.txt, this.x - this.w/2 + this.x_margin, this.y + this.y_margin + 10);
     pop();
+  }
+}
+
+class AchievementButton extends Button {
+  constructor(x,y,w,h,c) {
+    super(x,y,w,h,c); 
+    this.img = lock_img;
+    this.mode = CENTER;
+    this.locked = true;
+    this.chosen = false;
+  }
+
+  displayAButton() {
+    this.display();
+    if(this.locked) {
+      push();
+      imageMode(this.mode);
+      image(this.img, this.x, this.y, this.w, this.h);
+      pop();
+    } if (this.chosen) {
+      push();
+      strokeWeight(4);
+      stroke(30, 162, 112);
+      noFill();
+      rectMode(this.mode);
+      rect(this.x,this.y,this.w,this.h);
+      pop();
+    }
   }
 }
 
@@ -218,8 +287,10 @@ class Stamp extends Button {
     this.img = img;
     // this.img.resize(this.w);
     this.country = country;
+    //_c --> country name text attributes
     this.x_c = x_c;
     this.y_c = y_c;
+    this.c_c = 0;
     // this.w_c = w_c;
     // this.h_c = h_c;
     this.s_c = s_c; //textSize
@@ -240,7 +311,7 @@ class Stamp extends Button {
     push();
     textSize(this.s_c);
     textWrap(WORD);
-    fill(0);
+    fill(this.c_c);
     rectMode(CENTER);
     text(this.country, this.x_c, this.y_c, this.w);
     pop();
@@ -255,6 +326,9 @@ class Stamp extends Button {
 
   //not priority - creates a cute effect if filled stamp is touched
   flourish() {
+    if(this.obtained && this.pressed()) {
+      createConfetti(this.x + this.w/2 + random(-2,2), this.y + this.h/2 + random(-2,2));
+    }
   }
 
   exist() {
@@ -265,6 +339,7 @@ class Stamp extends Button {
     }
     
     this.displayText();
+    this.flourish();
   }
 }
 
@@ -337,7 +412,7 @@ class Keypad {
   }
 
   checkAnswer() {
-    if (currentGuess.length < 6) {
+    if (!currentGuess || currentGuess.length < 6) {
       return;
     }
 
@@ -348,6 +423,7 @@ class Keypad {
       for(var s in stamps) {
         if(stamps[s].country == find) {
           stamps[s].obtained = true;
+          checkProgress();
         }
       }
       //save find to cache
@@ -383,6 +459,82 @@ class Cover {
     //this.returnText = "Back"; //(this is a smarter solution... maybe for later lol) to exit keypad. Replaces padButton when keypad is active
     this.returnButton = new TextButton(displayWidth/2, padButtonY, 200, "Back", 0, this.h*1/15);
     this.pressed = false; //better way of controlling button presses, especially with overlapping positions/states
+
+    //achievement buttons
+    var offset = this.w/4;
+    var y_margin = this.y + this.h/5;
+    var btnWidth = this.w/6;
+    this.skin0 = new AchievementButton(this.x + offset, y_margin, btnWidth, btnWidth, 255);
+    this.skin0.locked = false;
+    this.skin0.chosen = true;
+    this.skin50 = new AchievementButton(this.x + offset*2, y_margin, btnWidth, btnWidth, color(200,50,0));
+    this.skin100 = new AchievementButton(this.x + offset*3, y_margin, btnWidth, btnWidth, 0);
+
+  }
+
+  keyPadButtons() {
+    if(this.typing){
+      this.pad.exist();
+      this.returnButton.displayTextButton();
+    } else {
+      this.padButton.displayTextButton();
+    }
+
+    if(this.padButton.pressed() && !this.typing) {
+      this.pressed = 'enter';
+    }
+
+    if(this.returnButton.pressed() && this.typing) {
+      this.pressed = 'back';
+      currentGuess = '';
+    }
+
+    if(this.pressed == 'enter') {
+      this.typing = true;
+    } else if (this.pressed == 'back') {
+      this.typing = false;
+    }
+  }
+
+  skinButtons() {
+    if(!this.typing){
+      this.skin0.displayAButton();
+      this.skin50.displayAButton();
+      this.skin100.displayAButton();
+
+      if(this.skin0.pressed()) {
+        if(!this.skin0.locked) {
+          pageSkinChange(page_img, 0);
+          this.skin0.chosen = true;
+          this.skin50.chosen = false;
+          this.skin100.chosen = false;
+        }
+      }
+
+      if(this.skin50.pressed()) {
+        if(!this.skin50.locked) {
+          console.log("50 pressed");
+          pageSkinChange(page50_img, 220);
+          this.skin0.chosen = false;
+          this.skin50.chosen = true;
+          this.skin100.chosen = false;
+        } else if(this.skin50.locked) {
+          messagePopUp("Needs 50%");
+        }
+      }
+
+      if(this.skin100.pressed()){
+        if(!this.skin100.locked) {
+          pageSkinChange(page100_img, 220);
+          this.skin0.chosen = false;
+          this.skin50.chosen = false;
+          this.skin100.chosen = true;
+        } else if(this.skin100.locked) {
+          messagePopUp("Needs 100%");
+        }
+
+      }
+    }
   }
 
   display() {
@@ -393,27 +545,9 @@ class Cover {
     image(this.bg,this.x,this.y,this.w,this.h);
     pop();
 
-    if(this.typing){
-      this.pad.exist();
-      this.returnButton.displayTextButton();
-    } else {
-      this.padButton.displayTextButton();
-    }
-/*
-    if(this.padButton.pressed() && !this.typing) {
-      this.pressed = 'enter';
-    }
 
-    if(this.returnButton.pressed() && this.typing) {
-      this.pressed = 'back';
-      currentGuess = '';
-    }
-*/
-    if(this.pressed == 'enter') {
-      this.typing = true;
-    } else if (this.pressed == 'back') {
-      this.typing = false;
-    }
+    this.skinButtons();
+    this.keyPadButtons();
  
   }
 }
@@ -425,7 +559,7 @@ class Page {
     this.w = w;
     this.h = h;
     this.contents = []; //countries in this page
-    this.img = page_img;
+    this.img = currentPageSkin;
   }
 
   initPage() {
@@ -459,6 +593,26 @@ class StampPage extends Page {
 class MapPage extends Page {
   constructor(x,y,w,h) {
     super(x,y,w,h);
+    this.contents[0] = new TextButton(w/2+w/10, h/3 + h/10, 255, "A Message", 0, h/12);
+    this.contents[1] = new TextButton(w/2+w/10, h*2/3 + h/10, 255, "Map", 0, h/10);
+  }
+
+  display() {
+    push();
+    rectMode(CENTER);
+    image(this.img, this.x, this.y, this.w, this.h);
+    pop();
+
+    for(var s in this.contents) {
+      this.contents[s].displayTextButton();
+    }
+
+    if(this.contents[0].pressed()) {
+      window.open("https://docs.google.com/document/d/1MhqY07yDmt4hhcsVTlJRU4Lv9HMgZqyGg70WoARbAyw/edit?usp=sharing");
+    }
+    if(this.contents[1].pressed()) {
+      window.open("https://drive.google.com/file/d/1DWLU7PTK0G-YzIPQmaK69Y4pT6znJMOj/view?usp=sharing");
+    }
   }
 }
 
@@ -495,7 +649,7 @@ class Passport {
     this.pages[0].pad.initiate();
     // console.log(this.pages[0].pad.key);
     // this.pages[1] = new TextPage(this.x, this.y, this.w, this.h);
-    // this.pages[2] = new MapPage(this.x, this.y, this.w, this.h);
+    this.pages[1] = new MapPage(this.x, this.y, this.w, this.h);
 
     initStamps(this.x, this.y, abs((this.x-this.w)*2/5), abs((this.y-this.h)/6));
 
@@ -555,6 +709,9 @@ function preload() {
 
   cover_img = loadImage('assets/Cover.png');
   page_img = loadImage('assets/Page.png');
+  page50_img = loadImage('assets/Page50.png');
+  page100_img = loadImage('assets/Page100.png');
+  lock_img = loadImage('assets/Lock.png');
   map_img = loadImage('assets/Map.jpg');
 
   stampImages[0] = loadImage('assets/Flags/Algeria.png');
@@ -586,32 +743,32 @@ function preload() {
   stampImages[26] = loadImage('assets/Flags/Morocco.png');
   stampImages[27] = loadImage('assets/Flags/Netherlands.png');
   stampImages[28] = loadImage('assets/Flags/New Zealand.png');
-  stampImages[29] = loadImage('assets/Flags/Palestine.png');
-  stampImages[30] = loadImage('assets/Flags/Pakistan.png');
+  stampImages[29] = loadImage('assets/Flags/Pakistan.png');
+  stampImages[30] = loadImage('assets/Flags/Palestine.png');
   stampImages[31] = loadImage('assets/Flags/Panama.png');
   stampImages[32] = loadImage('assets/Flags/Philippines.png');
   stampImages[33] = loadImage('assets/Flags/Poland.png');
   stampImages[34] = loadImage('assets/Flags/Portugal.png');
-  stampImages[35] = loadImage('assets/Flags/Saudi Arabia.png');
-  stampImages[36] = loadImage('assets/Flags/Serbia.png');
-  stampImages[37] = loadImage('assets/Flags/Singapore.png');
-  stampImages[38] = loadImage('assets/Flags/Slovak Republic.png');
-  stampImages[39] = loadImage('assets/Flags/South Africa.png');
-  stampImages[40] = loadImage('assets/Flags/Spain.png');
-  stampImages[41] = loadImage('assets/Flags/Sweden.png');
-  stampImages[42] = loadImage('assets/Flags/Thailand.png');
-  stampImages[43] = loadImage('assets/Flags/Trinidad & Tobago.png');
-  stampImages[44] = loadImage('assets/Flags/Türkiye.png');
-  stampImages[45] = loadImage('assets/Flags/UAE.png');
-  stampImages[46] = loadImage('assets/Flags/UK.png');
-  stampImages[47] = loadImage('assets/Flags/Ukraine.png');
-  stampImages[48] = loadImage('assets/Flags/USA.png');
-  stampImages[49] = loadImage('assets/Flags/Venezuela.png');
-  stampImages[50] = loadImage('assets/Flags/Yemen.png');
+  stampImages[35] = loadImage('assets/Flags/Serbia.png');
+  stampImages[36] = loadImage('assets/Flags/Singapore.png');
+  stampImages[37] = loadImage('assets/Flags/Slovak Republic.png');
+  stampImages[38] = loadImage('assets/Flags/South Africa.png');
+  stampImages[39] = loadImage('assets/Flags/Spain.png');
+  stampImages[40] = loadImage('assets/Flags/Sweden.png');
+  stampImages[41] = loadImage('assets/Flags/Thailand.png');
+  stampImages[42] = loadImage('assets/Flags/Trinidad and Tobago.png');
+  stampImages[43] = loadImage('assets/Flags/Türkiye.png');
+  stampImages[44] = loadImage('assets/Flags/UAE.png');
+  stampImages[45] = loadImage('assets/Flags/UK.png');
+  stampImages[46] = loadImage('assets/Flags/Ukraine.png');
+  stampImages[47] = loadImage('assets/Flags/USA.png');
+  stampImages[48] = loadImage('assets/Flags/Venezuela.png');
+  stampImages[49] = loadImage('assets/Flags/Yemen.png');
 
 }
 
 function setup() {
+  frameRate(30);
   var DW = displayWidth;
   var DH = displayHeight*4/5;
   createCanvas(displayWidth, displayHeight);
@@ -624,8 +781,11 @@ function setup() {
 
   currentGuess = str();
 
+  currentPageSkin = page_img;
+
   thePassport = new Passport(DW/margin, DH/margin, DW*(margin-2)/margin, DH*(margin-2)/margin);
   thePassport.initPages();
+  checkProgress();
   
   startButton = new TextButton(DW/2, (DH*4)/10, 250, "Start", 0, DH/13);
   instructionsButton = new TextButton(DW/2, (DH*6)/10, 250, "Instructions", 0, DH/15);
@@ -663,13 +823,23 @@ function draw() {
       // if(quitButton.pressed()) {
       //   gameState = 0;
       // }
-
-      
       break;
 
-    
+    case 10:
+      if(mouseIsClicked) {
+        createConfetti(mouseX, mouseY);
+      }
+      break;
   }
 
+  displayConfetti();
+
+  //Message timer manager!!
+  if(messageTimer > 0) {
+    messageTimer--;
+    resultMessage(messageText);
+    console.log(messageTimer); 
+  }
   mouseIsClicked = false;
 }
 
@@ -704,7 +874,7 @@ function mouseReleased() {
 function touchMoved() {
   // otherwise the display will move around
   // with your touch :(
-  return false;
+  //return false;
 }
 
 function titleScreen() {
@@ -835,5 +1005,121 @@ function bgAnimation(playing, bgColor) {
 
   for(var i = 0; i < bgCircles.length; i++) {
     bgCircles[i].exist(playing);
+  }
+}
+
+
+
+// Confetti :))
+class ConfettiPiece {
+  constructor(x, y, dx, dy, a, da, c) {
+    this.x = x;
+    this.y = y;
+    this.dx = dx;
+    this.ddx = 0.99;
+    this.dy = dy;
+    this.ddy = 1;
+    this.maxdy = 1.5;
+    this.c = c;
+    this.w = 10;
+    this.h = 3;
+    this.maxh = 3;
+    this.a = a; //z-axis plain angle
+    this.da = da;
+    this.b = 0; //x-axis plain angle
+    this.db = dy;
+    this.alive = true;
+  }
+
+  display() {
+    push();
+    rectMode(CENTER);
+    noStroke();
+    fill(this.c);
+    translate(this.x, this.y);
+    rotate(this.a);
+    rect(0, 0, this.w, this.h);
+    pop();
+  }
+
+  update() {
+    this.x += this.dx;
+    this.dx *= this.ddx;
+    
+    this.y += this.dy;
+    this.dy += this.ddy;
+    if (this.dy > this.maxdy) this.ddy = this.maxdy;
+
+    this.a += this.da;
+
+    this.h += this.maxh*sin(this.b);
+    if(this.h > this.maxh) this.h = this.maxh;
+    this.b += this.db/10;
+    this.db = this.dy;
+  }
+
+  exist() {
+    this.update();
+    this.display();
+    
+    if(this.y > displayHeight+20) {
+      this.alive = false;
+    }
+
+    console.log(this);
+  }
+}
+
+function createConfetti(x, y) {
+  console.log("creating @ " + x + ", " + y);
+  for(var i = 0; i < 25; i++) {
+    var dx = random(-15, 15);
+    var dy = random(-30, -1);
+    var a = random(6);
+    var da = random(1);
+    var c = color(random(255), random(255), random(255));
+    confettiParticles.push(new ConfettiPiece(x, y, dx, dy, a, da, c));
+  }
+  // confettiAmount = confettiParticles.length();
+}
+
+function displayConfetti() {
+  for(var p in confettiParticles) {
+    confettiParticles[p].exist();
+    if(!confettiParticles[p].alive) {
+      delete confettiParticles[p];
+    }
+  }
+}
+
+//Achievement System
+function checkProgress() {
+  var count = 0;
+  for(var s in stamps) {
+    if(stamps[s].obtained) {
+      count++;
+    }
+  }
+
+  //progress from 0 to 1, allows for generalizability
+  completionRate = count/stamps.length;
+  if(completionRate > 0.49) {
+    thePassport.pages[0].skin50.locked = false;
+  }
+
+  if(completionRate == 1) {
+    thePassport.pages[0].skin100.locked = false;
+  }
+}
+
+function pageSkinChange(skin, txtcolor) {
+  for(var i = 1; i < thePassport.pages.length; i++) {
+    console.log(thePassport.pages[i].img);
+    thePassport.pages[i].img = skin;
+    console.log(thePassport.pages[i].img);
+  }
+
+  for(var s in stamps) {
+    stamps[s].c_c = txtcolor;
   }
 }
