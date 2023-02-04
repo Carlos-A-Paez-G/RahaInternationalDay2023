@@ -755,15 +755,16 @@ function preload() {
   stampImages[38] = loadImage('assets/Flags/South Africa.png');
   stampImages[39] = loadImage('assets/Flags/Spain.png');
   stampImages[40] = loadImage('assets/Flags/Sweden.png');
-  stampImages[41] = loadImage('assets/Flags/Thailand.png');
-  stampImages[42] = loadImage('assets/Flags/Trinidad and Tobago.png');
-  stampImages[43] = loadImage('assets/Flags/Türkiye.png');
-  stampImages[44] = loadImage('assets/Flags/UAE.png');
-  stampImages[45] = loadImage('assets/Flags/UK.png');
-  stampImages[46] = loadImage('assets/Flags/Ukraine.png');
-  stampImages[47] = loadImage('assets/Flags/USA.png');
-  stampImages[48] = loadImage('assets/Flags/Venezuela.png');
-  stampImages[49] = loadImage('assets/Flags/Yemen.png');
+  stampImages[41] = loadImage('assets/flags/Switzerland.png');
+  stampImages[42] = loadImage('assets/Flags/Thailand.png');
+  stampImages[43] = loadImage('assets/Flags/Trinidad and Tobago.png');
+  stampImages[44] = loadImage('assets/Flags/Türkiye.png');
+  stampImages[45] = loadImage('assets/Flags/UAE.png');
+  stampImages[46] = loadImage('assets/Flags/UK.png');
+  stampImages[47] = loadImage('assets/Flags/Ukraine.png');
+  stampImages[48] = loadImage('assets/Flags/USA.png');
+  stampImages[49] = loadImage('assets/Flags/Venezuela.png');
+  stampImages[50] = loadImage('assets/Flags/Yemen.png');
 
 }
 
