@@ -755,7 +755,7 @@ function preload() {
   stampImages[38] = loadImage('assets/Flags/South Africa.png');
   stampImages[39] = loadImage('assets/Flags/Spain.png');
   stampImages[40] = loadImage('assets/Flags/Sweden.png');
-  stampImages[41] = loadImage('assets/flags/Switzerland.png');
+  stampImages[41] = loadImage('assets/Flags/Switzerland.png');
   stampImages[42] = loadImage('assets/Flags/Thailand.png');
   stampImages[43] = loadImage('assets/Flags/Trinidad and Tobago.png');
   stampImages[44] = loadImage('assets/Flags/Türkiye.png');
